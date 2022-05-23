@@ -1,0 +1,1 @@
+efw_win32.exe -src "C:\Documents and Settings\Martin\My Documents\f" -url "http://192.168.56.1:8080/upload/"
