@@ -46,6 +46,10 @@ func zip_folder(path_src string) (string, error) {
 	}(w)
 	err = filepath.Walk(path_src,
 		func(path string, info os.FileInfo, err error) error {
+			if info.IsDir() {
+				return err
+			}
+
 			rel_path, err := filepath.Rel(path_src, path)
 			if err != nil {
 				return err
@@ -61,10 +65,7 @@ func zip_folder(path_src string) (string, error) {
 				return err
 			}
 			_, err = f.Write([]byte(dat))
-			if err != nil {
-				return err
-			}
-			err = w.Close()
+
 			return err
 
 		})

@@ -39,6 +39,6 @@ func GetCmdArgs() Args {
 		log.Fatal(err)
 	}
 
-	return Args{src: fp, url: *u, duration: time.Duration(duration) * time.Second}
+	return Args{src: fp, url: *u, duration: time.Duration(duration) * time.Second, zipped: zipped}
 
 }
