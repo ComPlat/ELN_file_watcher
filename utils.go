@@ -7,10 +7,10 @@ import (
 	"path/filepath"
 )
 
-// get_root_dir returns the root directory, i.e., the first directory in the path.
+// getRootDir returns the root directory, i.e., the first directory in the path.
 // If the path is relative <root>/../<file> it returns the relative root.
 // If it is not relative it returns the absolut root,  i.e.: '/'
-func get_root_dir(path string) string {
+func getRootDir(path string) string {
 	current := path
 	for {
 		path = filepath.Dir(path)
@@ -21,8 +21,8 @@ func get_root_dir(path string) string {
 	}
 }
 
-// zip_folder zips a folder and safes the zipped folder with the same name in the same directory.
-func zip_folder(path_src string) (string, error) {
+// zipFolder zips a folder and safes the zipped folder with the same name in the same directory.
+func zipFolder(path_src string) (string, error) {
 	// Create a buffer to write our archive to.
 	output_path := path_src + ".zip"
 	outFile, err := os.Create(output_path)

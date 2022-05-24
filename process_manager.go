@@ -38,7 +38,7 @@ func (m ProcessManager) doWork(quit chan int) {
 						diff := now.Sub(modifiedtime)
 						if diff < 2*m.args.duration {
 							if relpath, err := filepath.Rel(m.args.src, path); err == nil {
-								folder := get_root_dir(relpath)
+								folder := getRootDir(relpath)
 
 								if _, ok := done_folders[folder]; !ok {
 									done_folders[folder] = true

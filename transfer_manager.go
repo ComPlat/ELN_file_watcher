@@ -41,7 +41,7 @@ func (m TransferManager) doWork(quit chan int) {
 					ErrorLogger.Println(err)
 				}
 			} else if m.args.zipped {
-				zip_paht, err := zip_folder(to_send)
+				zip_paht, err := zipFolder(to_send)
 				if err != nil {
 					ErrorLogger.Println(err)
 				}
