@@ -2,7 +2,6 @@ package main
 
 import (
 	"bytes"
-	"fmt"
 	"io"
 	"log"
 	"mime/multipart"
@@ -32,6 +31,7 @@ func (m TransferManager) doWork(quit chan int) {
 
 		select {
 		case <-quit:
+			InfoLogger.Println("Quit transfer process.")
 			return
 		case to_send := <-m.done_files:
 			if file, err := os.Stat(to_send); err != nil {
@@ -45,7 +45,9 @@ func (m TransferManager) doWork(quit chan int) {
 				if err != nil {
 					ErrorLogger.Println(err)
 				}
-				if file, err := os.Stat(to_send); err != nil {
+				if file, err := os.Stat(zip_paht); err != nil {
+					ErrorLogger.Println(err)
+				} else {
 					if err = m.send_file(zip_paht, file); err != nil {
 						ErrorLogger.Println(err)
 					}
@@ -78,7 +80,7 @@ func (m TransferManager) send_file(path_to_file string, fileInfo os.FileInfo) er
 		tmpUrlPath := m.args.url
 		tmpUrlPath.Path = path.Join(tmpUrlPath.Path, relpath)
 		urlPath = tmpUrlPath.String()
-		fmt.Println(urlPath)
+		InfoLogger.Println("Sending...", relpath)
 	} else {
 		return err
 	}
@@ -89,7 +91,7 @@ func (m TransferManager) send_file(path_to_file string, fileInfo os.FileInfo) er
 	// New multipart writer.
 	body := &bytes.Buffer{}
 	writer := multipart.NewWriter(body)
-	fw, err := writer.CreateFormFile("upload", fileInfo.Name())
+	fw, err := writer.CreateFormFile(m.args.post_name, fileInfo.Name())
 	if err != nil {
 		return err
 	}

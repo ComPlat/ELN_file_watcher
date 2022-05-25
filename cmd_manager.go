@@ -8,23 +8,24 @@ import (
 )
 
 type Args struct {
-	src      string
-	duration time.Duration
-	url      url.URL
-	zipped   bool
+	src, post_name string
+	duration       time.Duration
+	url            url.URL
+	zipped         bool
 }
 
 // GetCmdArgs Get/Parse command line arguments manager
 func GetCmdArgs() Args {
-	var fp, url_path string
+	var fp, url_path, post_name string
 	var duration int
 	var zipped bool
-	flag.StringVar(&fp, "src", "", "Src directory to be watched")
+	flag.StringVar(&fp, "src", "", "Source directory to be watched.")
 	flag.StringVar(&url_path, "url", "", "HTTP url to the file network storage. For example: http://<ip address>:<port>/<upload path>/")
-	flag.IntVar(&duration, "duration", 300, "Duration in seconds, i.e., how long a file must not be changed before sent")
+	flag.IntVar(&duration, "duration", 300, "Duration in seconds, i.e., how long a file must not be changed before sent.")
 	/// Only considered if result are stored in a folder.
 	/// If zipped is set the result folder will be transferred as zip file
-	flag.BoolVar(&zipped, "zip", false, "Only considered if result are stored in a folder. If zipped is set the result folder will be transferred as zip file")
+	flag.BoolVar(&zipped, "zip", false, "Only considered if result are stored in a folder. If zipped is set the result folder will be transferred as zip file.")
+	flag.StringVar(&post_name, "post-name", "file", "The post field name by which the file will be sent.")
 	flag.Parse()
 
 	if url_path == "" || fp == "" {
@@ -39,6 +40,6 @@ func GetCmdArgs() Args {
 		log.Fatal(err)
 	}
 
-	return Args{src: fp, url: *u, duration: time.Duration(duration) * time.Second, zipped: zipped}
+	return Args{src: fp, post_name: post_name, url: *u, duration: time.Duration(duration) * time.Second, zipped: zipped}
 
 }
