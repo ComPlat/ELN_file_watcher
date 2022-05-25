@@ -35,7 +35,7 @@ efw -duration &lt;integer&gt; -src &lt;folder path&gt; -post-name &lt;post-field
 
 Additionally, this repo contains also a responding file receiver sever. The server is contained in the subdirectory *efw_receiver*.
 
-efw_receiver -duration &lt;integer&gt; -src &lt;folder path&gt; -post-name &lt;post-field-
+efw_receiver -dst &lt;destination&gt; -url &lt;upload path&gt; -post &lt;post-field-name&gt; -port &lt;port&gt;
 
     -dst [string]
         Destination directory where received files are stored.
