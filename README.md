@@ -3,7 +3,7 @@
 
 Once all files in a subdirectory of &lt;CMD arg -src&gt; 
 (or a file directly in &lt;CMD arg -src&gt;) are not changed
-for about exactly &lt;CMD arg -duration&gt; seconds, the 
+for about &lt;CMD arg -duration&gt; seconds, the 
 subdirectory is sent to &lt;CMD arg -url&gt; via HTTP.
 
 **Important** this project has to be compiled with go version 1.10.8. Otherwise, it cannot be guaranteed to run on Win XP.
