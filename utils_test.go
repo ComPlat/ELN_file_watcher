@@ -66,10 +66,16 @@ func TestGetRootDir(t *testing.T) {
 }
 
 func cleanTestDir() {
-	if err := os.RemoveAll("test_dir"); err != nil {
+	if err := os.RemoveAll("testDir"); err != nil {
 		fmt.Println(err)
 	}
-	if err := os.Mkdir("test_dir", 0777); err != nil {
+	if err := os.Mkdir("testDir", 0777); err != nil {
+		log.Fatal(err)
+	}
+	if err := os.Mkdir("testDir/src", 0777); err != nil {
+		log.Fatal(err)
+	}
+	if err := os.Mkdir("testDir/dst", 0777); err != nil {
 		log.Fatal(err)
 	}
 }
@@ -94,50 +100,50 @@ func TestZipFolder(t *testing.T) {
 	defer cleanTestDir()
 
 	// Prepare Test
-	if err := os.MkdirAll("test_dir/A/B", 0777); err != nil {
+	if err := os.MkdirAll("testDir/A/B", 0777); err != nil {
 		log.Fatal(err)
 	}
-	if err := os.MkdirAll("test_dir/A/C", 0777); err != nil {
+	if err := os.MkdirAll("testDir/A/C", 0777); err != nil {
 		log.Fatal(err)
 	}
-	if err := os.MkdirAll("test_dir/C", 0777); err != nil {
+	if err := os.MkdirAll("testDir/C", 0777); err != nil {
 		log.Fatal(err)
 	}
 
-	writeIntoFile("test_dir/A/B/a.txt", "Hallo A_B_a")
-	writeIntoFile("test_dir/A/b.txt", "Hallo A_c")
-	writeIntoFile("test_dir/A/C/c.txt", "Hallo A_C_c")
-	writeIntoFile("test_dir/C/d.txt", "Hallo C_d")
-	writeIntoFile("test_dir/e.txt", "Hallo e")
+	writeIntoFile("testDir/A/B/a.txt", "Hallo A_B_a")
+	writeIntoFile("testDir/A/b.txt", "Hallo A_c")
+	writeIntoFile("testDir/A/C/c.txt", "Hallo A_C_c")
+	writeIntoFile("testDir/C/d.txt", "Hallo C_d")
+	writeIntoFile("testDir/e.txt", "Hallo e")
 	// Done Prepare
 
-	folderA, err := zipFolder("test_dir/A")
+	folderA, err := zipFolder("testDir/A")
 	if err != nil {
 		return
 	}
 
-	folderC, err := zipFolder("test_dir/C")
+	folderC, err := zipFolder("testDir/C")
 	if err != nil {
 		return
 	}
 
-	folderE, err := zipFolder("test_dir/e.txt")
+	folderE, err := zipFolder("testDir/e.txt")
 	if err != nil {
 		return
 	}
 
 	if _, err := os.Stat(folderA); err != nil {
-		t.Errorf("zipFolder(\"test_dir/A\") did not work!")
+		t.Errorf("zipFolder(\"testDir/A\") did not work!")
 
 	}
 
 	if _, err := os.Stat(folderC); err != nil {
-		t.Errorf("zipFolder(\"test_dir/C\") did not work!")
+		t.Errorf("zipFolder(\"testDir/C\") did not work!")
 
 	}
 
 	if _, err := os.Stat(folderE); err != nil {
-		t.Errorf("zipFolder(\"test_dir/e.txt\") did not work!")
+		t.Errorf("zipFolder(\"testDir/e.txt\") did not work!")
 
 	}
 }

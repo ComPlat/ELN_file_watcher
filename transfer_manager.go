@@ -1,32 +1,28 @@
 package main
 
 import (
-	"bytes"
-	"io"
-	"log"
-	"mime/multipart"
-	"net/http"
+	"github.com/studio-b12/gowebdav"
+	"io/ioutil"
 	"os"
-	"path"
 	"path/filepath"
 	"strings"
-	"time"
 )
 
 // TransferManager reacts on the channel done_files.
-// If folder of file is ready to send it sends it via HTTP to <CMD arg -url>.
-// It also initializes the zipping if <CMD arg -zipped> is set.
+// If folder of file is ready to send it sends it via WebDAV (HTTP) to <CMD arg -dst>.
+// It also initializes the zipping if <CMD arg -zip> is set.
 type TransferManager struct {
 	args       *Args
 	done_files chan string
 }
 
 // doWork runs in a endless loop. It reacts on the channel done_files.
-// If folder of file is ready to send it sends it via HTTP to <CMD arg -url>.
-// It also initializes the zipping if <CMD arg -zipped> is set
+// If folder of file is ready to send it sends it via HWebDAV (HTTP) to <CMD arg -dst>.
+// It also initializes the zipping if <CMD arg -zip> is set
 // It terminates as soon as a value is pushed into quit. Run in extra goroutine.
-func (m TransferManager) doWork(quit chan int) {
+func (m *TransferManager) doWork(quit chan int) {
 	InfoLogger.Println("Started transfer process.")
+
 	for {
 
 		select {
@@ -51,6 +47,9 @@ func (m TransferManager) doWork(quit chan int) {
 					if err = m.send_file(zip_paht, file); err != nil {
 						ErrorLogger.Println(err)
 					}
+					if err := os.Remove(zip_paht); err != nil {
+						ErrorLogger.Println(err)
+					}
 				}
 
 			} else {
@@ -72,49 +71,40 @@ func (m TransferManager) doWork(quit chan int) {
 	}
 }
 
-// send_file sends a file via HTTP
-func (m TransferManager) send_file(path_to_file string, fileInfo os.FileInfo) error {
-	var urlPath string
+// send_file sends a file via WebDAV
+func (m *TransferManager) send_file(path_to_file string, _ os.FileInfo) error {
+	var webdavFilePath, urlPathDir string
+
+	user := m.args.user
+	password := m.args.pass
+
+	c := gowebdav.NewClient(m.args.dst.String(), user, password)
+	if err := c.Connect(); err != nil {
+		return err
+	}
 	if relpath, err := filepath.Rel(m.args.src, path_to_file); err == nil {
-		relpath = strings.Replace(relpath, string(os.PathSeparator), "/", -1)
-		tmpUrlPath := m.args.url
-		tmpUrlPath.Path = path.Join(tmpUrlPath.Path, relpath)
-		urlPath = tmpUrlPath.String()
+		webdavFilePath = strings.Replace(relpath, string(os.PathSeparator), "/", -1)
+		webdavFilePath = strings.TrimPrefix(webdavFilePath, "./")
+		urlPathDir = filepath.Dir(webdavFilePath)
 		InfoLogger.Println("Sending...", relpath)
 	} else {
 		return err
 	}
-	client := &http.Client{
-		Timeout: time.Second * 10,
-	}
 
-	// New multipart writer.
-	body := &bytes.Buffer{}
-	writer := multipart.NewWriter(body)
-	fw, err := writer.CreateFormFile(m.args.post_name, fileInfo.Name())
-	if err != nil {
-		return err
+	if urlPathDir != "." {
+		err := c.MkdirAll(urlPathDir, 0644)
+		if err != nil {
+			return err
+		}
 	}
-	file, err := os.Open(path_to_file)
+	bytes, err := ioutil.ReadFile(path_to_file)
 	if err != nil {
-		return err
-	}
-	_, err = io.Copy(fw, file)
-	if err != nil {
-		return err
-	}
-	if err = writer.Close(); err != nil {
 		return err
 	}
 
-	req, err := http.NewRequest("POST", urlPath, bytes.NewReader(body.Bytes()))
+	err = c.Write(webdavFilePath, bytes, 0644)
 	if err != nil {
 		return err
-	}
-	req.Header.Set("Content-Type", writer.FormDataContentType())
-	rsp, _ := client.Do(req)
-	if rsp.StatusCode != http.StatusOK {
-		log.Printf("Request failed with response code: %d", rsp.StatusCode)
 	}
 	return nil
 }

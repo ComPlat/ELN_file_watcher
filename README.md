@@ -1,53 +1,45 @@
 # ELN_file_watcher
 *Version 0.1.1*
 
-Once all files in a subdirectory of &lt;CMD arg -src&gt; 
-(or a file directly in &lt;CMD arg -src&gt;) are not changed
-for about exactly &lt;CMD arg -duration&gt; seconds, the 
-subdirectory is sent to &lt;CMD arg -url&gt; via HTTP.
+Once all files in a subdirectory <CMD arg -src> 
+(or a file directly in <CMD arg -src>) have not been
+modified for about exactly <CMD arg -duration> seconds,
+the subdirectory is sent to a remote WebDAV server at <CMD arg -dst>.
 
 **Important** this project has to be compiled with go version 1.10.8. Otherwise, it cannot be guaranteed to run on Win XP.
 
+**Important** This project uses the WebDAV protocol to transfer data. Therefore, the project *https://github.com/studio-b12/gowebdav* is used. In order to be compatible to go v1.10.8 the release https://github.com/studio-b12/gowebdav/releases/tag/5 has been used.
+
 ## Usage
 
-efw -duration &lt;integer&gt; -src &lt;folder path&gt; -post-name &lt;post-field-name&gt; -url &lt;http url&gt;/ [-zip]
+efw -duration &lt;integer&gt; -src &lt;folder&gt; -dst &lt;url&gt;/ -user &lt;username&gt; -pass &lt;password&gt; [-zip]
 
 
     -duration [int]
         Duration in seconds, i.e., how long a file must
         not be changed before sent. (default 300)
     
-    -post-name [string]
-        The post field name by which the file will be sent. (default "file")
-    
     -src [string]
         Source directory to be watched.
     
-    -url [string]
-        HTTP url to the file network storage. 
-        For example: http://<ip address>:<port>/<upload path>/
-    
+    -dst [string]
+        WebDAV destination URL. If the destination is on the lsdf, the URL should be as follows:
+        https://os-webdav.lsdf.kit.edu/<OE>/<inst>/projects/<PROJECTNAME>/
+            <OE>-Organisationseinheit, z.B. kit.
+            <inst>-Institut-Name, z.B. ioc, scc, ikp, imk-asf etc.
+            <PROJRCTNAME>-Projekt-Name
+
+    -pass [string]
+        WebDAV Password
+
+    -user [string]
+        WebDAV user
+  
     -zip
         Only considered if result are stored in a folder. 
         If zipped is set the result folder will be transferred as zip file.   
 
-## Receiver
 
-Additionally, this repo contains also a responding file receiver sever. The server is contained in the subdirectory *efw_receiver*.
-
-efw_receiver -dst &lt;destination&gt; -url &lt;upload path&gt; -post &lt;post-field-name&gt; -port &lt;port&gt;
-
-    -dst [string]
-        Destination directory where received files are stored.
-
-    -url [string]
-        Fixed URL path to upload files <upload path> (default "upload")
-
-    -post [string]
-        The post field name by which the file will be sent (default "file")
-
-    -port [string]
-        "Server address port. Starts with leading (default ":8080")
 
   
 

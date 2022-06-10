@@ -3,7 +3,6 @@ package main
 import (
 	//"github.com/bouk/monkey"
 	"log"
-	"net/url"
 	"os"
 	"testing"
 	"time"
@@ -14,33 +13,23 @@ func TestDoWorkProcess(t *testing.T) {
 	defer cleanTestDir()
 
 	// Prepare Test
-	if err := os.MkdirAll("test_dir/A/B", 0777); err != nil {
+	if err := os.MkdirAll("testDir/src/A/B", os.ModePerm); err != nil {
 		log.Fatal(err)
 	}
-	if err := os.MkdirAll("test_dir/A/C", 0777); err != nil {
+	if err := os.MkdirAll("testDir/src/A/C", os.ModePerm); err != nil {
 		log.Fatal(err)
 	}
-	if err := os.MkdirAll("test_dir/C", 0777); err != nil {
+	if err := os.MkdirAll("testDir/src/C", os.ModePerm); err != nil {
 		log.Fatal(err)
 	}
 
-	writeIntoFile("test_dir/A/B/a.txt", "Hallo A_B_a")
-	writeIntoFile("test_dir/A/b.txt", "Hallo A_c")
-	writeIntoFile("test_dir/A/C/c.txt", "Hallo A_C_c")
-	writeIntoFile("test_dir/C/d.txt", "Hallo C_d")
-	writeIntoFile("test_dir/e.txt", "Hallo e")
+	writeIntoFile("testDir/src/A/B/a.txt", "Hallo A_B_a")
+	writeIntoFile("testDir/src/A/b.txt", "Hallo A_c")
+	writeIntoFile("testDir/src/A/C/c.txt", "Hallo A_C_c")
+	writeIntoFile("testDir/src/C/d.txt", "Hallo C_d")
+	writeIntoFile("testDir/src/e.txt", "Hallo e")
 
-	args := Args{src: "/home/martin/Desktop/dev/KIT/ELN_file_watcher/test_dir", duration: 3, url: url.URL{
-		Scheme:     "",
-		Opaque:     "",
-		User:       nil,
-		Host:       "",
-		Path:       "",
-		RawPath:    "",
-		ForceQuery: false,
-		RawQuery:   "",
-		Fragment:   "",
-	}, zipped: true}
+	args := Args{src: "/home/martin/Desktop/dev/KIT/ELN_file_watcher/testDir/src", duration: 3, user: "admin", pass: "admin", zipped: true}
 
 	//start_time := time.Now()
 

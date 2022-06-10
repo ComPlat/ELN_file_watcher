@@ -2,114 +2,37 @@ package main
 
 import (
 	"fmt"
-	"net/http"
-	"net/http/httptest"
-	"time"
-
-	//"github.com/bouk/monkey"
+	"github.com/studio-b12/gowebdav"
 	"log"
 	"net/url"
 	"os"
 	"testing"
+	"time"
 )
 
-type Base int
-
-const (
-	E Base = iota
-	A
-	C
-	NONE
-)
-
-func getFile(request *http.Request, post_name *string) (string, int) {
-	if err := request.ParseMultipartForm(32 << 20); err != nil {
-		ErrorLogger.Println(err)
-		return "", http.StatusBadRequest
-	}
-	//Access the photo key - First Approach
-	_, file, err := request.FormFile(*post_name)
-	if err != nil {
-		ErrorLogger.Println(err)
-		return "", http.StatusBadRequest
-	}
-
-	return file.Filename, http.StatusOK
-}
-
-// https://play.golang.org/p/Qg_uv_inCek
-// contains checks if a string is present in a slice
-func contains(s []string, str string) bool {
-	for _, v := range s {
-		if v == str {
-			return true
-		}
-	}
-
-	return false
-}
-
-func mainTransferTest(t *testing.T, zipped bool) {
+func mainTransferTest(_ *testing.T, zipped bool) Args {
 	cleanTestDir()
 	defer cleanTestDir()
-	counter := E
-	post_name := "file"
 	// Prepare Test
-	if err := os.MkdirAll("test_dir/A/B", 0777); err != nil {
+	if err := os.MkdirAll("testDir/src/A/B", os.ModePerm); err != nil {
 		log.Fatal(err)
 	}
-	if err := os.MkdirAll("test_dir/A/C", 0777); err != nil {
+	if err := os.MkdirAll("testDir/src/A/C", os.ModePerm); err != nil {
 		log.Fatal(err)
 	}
-	if err := os.MkdirAll("test_dir/C", 0777); err != nil {
+	if err := os.MkdirAll("testDir/src/C", os.ModePerm); err != nil {
 		log.Fatal(err)
 	}
 
-	writeIntoFile("test_dir/A/B/a.txt", "Hallo A_B_a")
-	writeIntoFile("test_dir/A/b.txt", "Hallo A_c")
-	writeIntoFile("test_dir/A/C/c.txt", "Hallo A_C_c")
-	writeIntoFile("test_dir/C/d.txt", "Hallo C_d")
-	writeIntoFile("test_dir/e.txt", "Hallo e")
+	writeIntoFile("testDir/src/A/B/a.txt", "Hallo A_B_a")
+	writeIntoFile("testDir/src/A/b.txt", "Hallo A_c")
+	writeIntoFile("testDir/src/A/C/c.txt", "Hallo A_C_c")
+	writeIntoFile("testDir/src/C/d.txt", "Hallo C_d")
+	writeIntoFile("testDir/src/e.txt", "Hallo e")
 
 	fmt.Println("mocking server")
-	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		fmt.Println("Inn Request .... ")
-		fmt.Println("Received:", r.URL)
-		filename, statusCode := getFile(r, &post_name)
-		switch counter {
-		case A:
-			if statusCode != http.StatusOK {
-				t.Errorf("Status shuold be Ok but it is %d", statusCode)
-			}
-			if zipped {
-				if filename != "A.zip" {
-					t.Errorf("File shuold be A.zip but it is %s", filename)
-				}
-			} else {
-				if !contains([]string{"b.txt", "a.txt", "c.txt"}, filename) {
-					t.Errorf("File shuold be in [b.txt,a.txt,c.txt] but it is %s", filename)
-				}
-			}
-			break
-		case E:
-			if statusCode != http.StatusOK {
-				t.Errorf("Status shuold be Ok but it is %d", statusCode)
-			}
-			if filename != "e.txt" {
-				t.Errorf("File shuold be e.txt but it is %s", filename)
-			}
-			break
-		case C:
-			break
-		case NONE:
-			t.Errorf("No Reques expexted!")
-			break
 
-		}
-
-	}))
-
-	u, err := url.Parse(ts.URL)
+	u, err := url.Parse("http://localhost:8080/")
 	if err != nil {
 		ErrorLogger.Println(err)
 		log.Fatal(err)
@@ -117,34 +40,65 @@ func mainTransferTest(t *testing.T, zipped bool) {
 
 	fmt.Println("url: ", u.String())
 
-	args := Args{src: "/home/martin/Desktop/dev/KIT/ELN_file_watcher/test_dir", duration: 3, url: *u, zipped: zipped, post_name: post_name}
+	args := Args{src: "./testDir/src", duration: 3, dst: *u, user: "admin", pass: "admin", zipped: zipped}
 	fmt.Println(args)
-	defer ts.Close()
 
 	fmt.Println("________________________________NONE_______________")
 
-	counter = NONE
 	done_files := make(chan string, 20)
 	quit := make(chan int)
 	pm := newTransferManager(&args, done_files)
 	go pm.doWork(quit)
 	time.Sleep(time.Duration(1) * time.Second)
 
-	counter = E
-	done_files <- "/home/martin/Desktop/dev/KIT/ELN_file_watcher/test_dir/e.txt"
+	done_files <- "./testDir/src/e.txt"
 
 	time.Sleep(time.Duration(1) * time.Second)
 
-	counter = A
-	done_files <- "/home/martin/Desktop/dev/KIT/ELN_file_watcher/test_dir/A"
+	done_files <- "./testDir/src/A"
 
 	time.Sleep(time.Duration(1) * time.Second)
+
+	return args
+
 }
 
 func TestDoWorkTransfer(t *testing.T) {
-	mainTransferTest(t, false)
+	fmt.Println("Make sure that docker container is receiving. Run: docker-compose up")
+	args := mainTransferTest(t, false)
+	paths := []string{"/A/B/a.txt", "/A/C/c.txt", "/A/b.txt", "/e.txt"}
+	user := args.user
+	password := args.pass
+
+	c := gowebdav.NewClient(args.dst.String(), user, password)
+	for _, p := range paths {
+		if _, err := c.Stat(p); err != nil {
+			fmt.Println(err)
+			t.Errorf("File shold be received=.%s", p)
+		}
+	}
+	err := c.RemoveAll("/")
+	if err != nil {
+		fmt.Println(err)
+	}
 }
 
 func TestDoWorkTransferZipped(t *testing.T) {
-	mainTransferTest(t, true)
+	fmt.Println("Make sure that docker container is receiving. Run: docker-compose up")
+	args := mainTransferTest(t, true)
+	paths := []string{"/A.zip", "/e.txt"}
+	user := args.user
+	password := args.pass
+
+	c := gowebdav.NewClient(args.dst.String(), user, password)
+	for _, p := range paths {
+		if _, err := c.Stat(p); err != nil {
+			fmt.Println(err)
+			t.Errorf("File shold be received=.%s", p)
+		}
+	}
+	err := c.RemoveAll("/")
+	if err != nil {
+		fmt.Println(err)
+	}
 }
