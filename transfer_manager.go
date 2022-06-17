@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/studio-b12/gowebdav"
+	"github.com/StarmanMartin/gowebdav"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -78,7 +78,7 @@ func (m *TransferManager) send_file(path_to_file string, _ os.FileInfo) error {
 	user := m.args.user
 	password := m.args.pass
 
-	c := gowebdav.NewClient(m.args.dst.String(), user, password)
+	c := gowebdav.NewClient(m.args.dst.String(), user, password, tr)
 	if err := c.Connect(); err != nil {
 		return err
 	}

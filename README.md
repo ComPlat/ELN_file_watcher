@@ -8,13 +8,13 @@ the subdirectory is sent to a remote WebDAV server at <CMD arg -dst>.
 
 **Important** this project has to be compiled with go version 1.10.8. Otherwise, it cannot be guaranteed to run on Win XP.
 
-**Important** This project uses the WebDAV protocol to transfer data. Therefore, the project *https://github.com/studio-b12/gowebdav* is used. In order to be compatible to go v1.10.8 the release https://github.com/studio-b12/gowebdav/releases/tag/5 has been used.
-
 ## Usage
 
 efw -duration &lt;integer&gt; -src &lt;folder&gt; -dst &lt;url&gt;/ -user &lt;username&gt; -pass &lt;password&gt; [-zip]
 
-
+    -crt [string]
+        Path to server TLS certificate. Only needed if the server has a self signed certificate.
+    
     -duration [int]
         Duration in seconds, i.e., how long a file must
         not be changed before sent. (default 300)

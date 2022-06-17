@@ -8,15 +8,15 @@ import (
 )
 
 type Args struct {
-	src, user, pass string
-	dst             url.URL
-	duration        time.Duration
-	zipped          bool
+	src, user, pass, crt string
+	dst                  url.URL
+	duration             time.Duration
+	zipped               bool
 }
 
 // GetCmdArgs Get/Parse command line arguments manager
 func GetCmdArgs() Args {
-	var fp, dst, user, pass string
+	var fp, dst, user, pass, crt string
 	var duration int
 	var zipped bool
 
@@ -25,6 +25,7 @@ func GetCmdArgs() Args {
 	flag.StringVar(&user, "user", "", "WebDAV user")
 	flag.StringVar(&pass, "pass", "", "WebDAV Password")
 	flag.IntVar(&duration, "duration", 300, "Duration in seconds, i.e., how long a file must not be changed before sent.")
+	flag.StringVar(&crt, "crt", "", "Path to server TLS certificate. Only needed if the server has a self signed certificate.")
 	/// Only considered if result are stored in a folder.
 	/// If zipped is set the result folder will be transferred as zip file
 	flag.BoolVar(&zipped, "zip", false, "Only considered if result are stored in a folder. If zipped is set the result folder will be transferred as zip file.")
@@ -42,6 +43,6 @@ func GetCmdArgs() Args {
 		log.Fatal(err)
 	}
 
-	return Args{src: fp, dst: *u, user: user, pass: pass, duration: time.Duration(duration) * time.Second, zipped: zipped}
+	return Args{src: fp, dst: *u, user: user, pass: pass, crt: crt, duration: time.Duration(duration) * time.Second, zipped: zipped}
 
 }
