@@ -15,7 +15,7 @@ var (
 	InfoLogger  *log.Logger
 	ErrorLogger *log.Logger
 	args        Args
-	tr          *http.Transport
+	tr          *http.Transport = nil
 )
 
 // init initializes the logger and parses CMD args.
@@ -31,14 +31,15 @@ func init() {
 	InfoLogger = log.New(mw, "\rINFO: ", log.Ldate|log.Ltime|log.Lshortfile)
 	ErrorLogger = log.New(mw, "\rERROR: ", log.Ldate|log.Ltime|log.Lshortfile)
 
+	// Read in the cert file
+
+	isCert := len(args.crt) > 0
 	// Get the SystemCertPool, continue with an empty pool on error
 	rootCAs, _ := x509.SystemCertPool()
 	if rootCAs == nil {
 		rootCAs = x509.NewCertPool()
 	}
-
-	// Read in the cert file
-	if len(args.crt) > 0 {
+	if isCert {
 		certs, err := ioutil.ReadFile(args.crt)
 		if err != nil {
 			ErrorLogger.Fatalf("Failed to append %q to RootCAs: %v", args.crt, err)
@@ -52,11 +53,12 @@ func init() {
 
 	// Trust the augmented cert pool in our client
 	config := &tls.Config{
-		InsecureSkipVerify: false,
+		InsecureSkipVerify: !isCert,
 		RootCAs:            rootCAs,
 	}
 
 	tr = &http.Transport{TLSClientConfig: config}
+
 }
 
 // main starts the ELN file watcher. See README for more information.
@@ -76,6 +78,10 @@ func main() {
 	pm := newProcessManager(&args, done_files)
 	go pm.doWork(quit)
 	tm := newTransferManager(&args, done_files)
+	if _, err := tm.connect_to_server(); err != nil {
+		ErrorLogger.Println("Error connecting: ", err)
+		log.Fatal(err)
+	}
 	go tm.doWork(quit)
 
 	for {

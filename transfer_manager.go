@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 )
 
 // TransferManager reacts on the channel done_files.
@@ -71,15 +72,25 @@ func (m *TransferManager) doWork(quit chan int) {
 	}
 }
 
-// send_file sends a file via WebDAV
-func (m *TransferManager) send_file(path_to_file string, _ os.FileInfo) error {
-	var webdavFilePath, urlPathDir string
-
+func (m *TransferManager) connect_to_server() (*gowebdav.Client, error) {
 	user := m.args.user
 	password := m.args.pass
 
 	c := gowebdav.NewClient(m.args.dst.String(), user, password, tr)
+	c.SetTimeout(5 * time.Second)
 	if err := c.Connect(); err != nil {
+		return nil, err
+	}
+
+	return c, nil
+}
+
+// send_file sends a file via WebDAV
+func (m *TransferManager) send_file(path_to_file string, _ os.FileInfo) error {
+	var webdavFilePath, urlPathDir string
+
+	c, err := m.connect_to_server()
+	if err != nil {
 		return err
 	}
 	if relpath, err := filepath.Rel(m.args.src, path_to_file); err == nil {
