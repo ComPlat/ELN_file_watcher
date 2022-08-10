@@ -1,5 +1,5 @@
 # ELN_file_watcher
-*Version 1.1*
+*Version 1.2*
 
 Once all files in a subdirectory <CMD arg -src> 
 (or a file directly in <CMD arg -src>) have not been
