@@ -37,7 +37,7 @@ func (m *TransferManager) doWork(quit chan int) {
 				if err := m.send_file(to_send, file); err != nil {
 					ErrorLogger.Println(err)
 				}
-			} else if m.args.zipped {
+			} else if m.args.sendType == "zip" {
 				zip_paht, err := zipFolder(to_send)
 				if err != nil {
 					ErrorLogger.Println(err)
@@ -86,21 +86,24 @@ func (m *TransferManager) connect_to_server() (*gowebdav.Client, error) {
 }
 
 // send_file sends a file via WebDAV
-func (m *TransferManager) send_file(path_to_file string, _ os.FileInfo) error {
+func (m *TransferManager) send_file(path_to_file string, file os.FileInfo) error {
 	var webdavFilePath, urlPathDir string
 
 	c, err := m.connect_to_server()
 	if err != nil {
 		return err
 	}
-	if relpath, err := filepath.Rel(m.args.src, path_to_file); err == nil {
+	if m.args.sendType == "file" {
+		urlPathDir = "."
+		webdavFilePath = file.Name()
+	} else if relpath, err := filepath.Rel(m.args.src, path_to_file); err == nil {
 		webdavFilePath = strings.Replace(relpath, string(os.PathSeparator), "/", -1)
 		webdavFilePath = strings.TrimPrefix(webdavFilePath, "./")
 		urlPathDir = filepath.Dir(webdavFilePath)
-		InfoLogger.Println("Sending...", relpath)
 	} else {
 		return err
 	}
+	InfoLogger.Println("Sending...", webdavFilePath)
 
 	if urlPathDir != "." {
 		err := c.MkdirAll(urlPathDir, 0644)

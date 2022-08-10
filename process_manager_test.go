@@ -29,7 +29,7 @@ func TestDoWorkProcess(t *testing.T) {
 	writeIntoFile("testDir/src/C/d.txt", "Hallo C_d")
 	writeIntoFile("testDir/src/e.txt", "Hallo e")
 
-	args := Args{src: "/home/martin/Desktop/dev/KIT/ELN_file_watcher/testDir/src", duration: 3, user: "admin", pass: "admin", zipped: true}
+	args := Args{src: "/home/martin/Desktop/dev/KIT/ELN_file_watcher/testDir/src", duration: 3, user: "admin", pass: "admin", sendType: "zip"}
 
 	//start_time := time.Now()
 

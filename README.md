@@ -35,9 +35,11 @@ efw -duration &lt;integer&gt; -src &lt;folder&gt; -dst &lt;url&gt;/ -user &lt;us
     -user [string]
         WebDAV user
   
-    -zip
-        Only considered if result are stored in a folder. 
-        If zipped is set the result folder will be transferred as zip file.   
+    -type [string: file|folder|zip]
+         Type must be 'file', 'folder' or 'zip'. The 'file' option means that each file is 
+         handled individually, the 'folder' option means that entire folders are transmitted
+         only when all files in them are ready. The option 'zip' sends a folder zipped, only
+         when all files in a folder are ready.
 
 ## Setup the efw on a Windows system
 1) Download the **run_example.bat**, the **efw.exe** and the **task_example.vbs** for your system [here](https://github.com/ComPlat/ELN_file_watcher/releases/tag/latest)

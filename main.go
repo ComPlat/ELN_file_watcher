@@ -20,7 +20,6 @@ var (
 
 // init initializes the logger and parses CMD args.
 func init() {
-	args = GetCmdArgs()
 
 	logFile, err := os.OpenFile("efw_log.txt", os.O_CREATE|os.O_APPEND|os.O_RDWR, 0666)
 	if err != nil {
@@ -32,7 +31,10 @@ func init() {
 	ErrorLogger = log.New(mw, "\rERROR: ", log.Ldate|log.Ltime|log.Lshortfile)
 
 	// Read in the cert file
+}
 
+func initArgs() {
+	args = GetCmdArgs()
 	isCert := len(args.crt) > 0
 	// Get the SystemCertPool, continue with an empty pool on error
 	rootCAs, _ := x509.SystemCertPool()
@@ -63,6 +65,7 @@ func init() {
 
 // main starts the ELN file watcher. See README for more information.
 func main() {
+	initArgs()
 	now := time.Now()
 	InfoLogger.Println("Starting at ", now.Format(time.RFC822))
 	defer (func() {
@@ -74,7 +77,7 @@ func main() {
 	done_files := make(chan string, 20)
 	// For potential (not jet implemented quit conditions)
 	quit := make(chan int)
-	InfoLogger.Printf("\n-----------------------------\nCMD Args:\n dst=%s,\n src=%s,\n duration=%d sec.,\n user=%s,\n zip=%t,\n crt= %s \n-----------------------------\n", args.dst.String(), args.src, int(args.duration.Seconds()), args.user, args.zipped, args.crt)
+	InfoLogger.Printf("\n-----------------------------\nCMD Args:\n dst=%s,\n src=%s,\n duration=%d sec.,\n user=%s,\n type=%s,\n crt= %s \n-----------------------------\n", args.dst.String(), args.src, int(args.duration.Seconds()), args.user, args.sendType, args.crt)
 	pm := newProcessManager(&args, done_files)
 	go pm.doWork(quit)
 	tm := newTransferManager(&args, done_files)

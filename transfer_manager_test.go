@@ -1,16 +1,18 @@
 package main
 
 import (
+	"crypto/tls"
 	"fmt"
 	"github.com/studio-b12/gowebdav"
 	"log"
+	"net/http"
 	"net/url"
 	"os"
 	"testing"
 	"time"
 )
 
-func mainTransferTest(_ *testing.T, zipped bool) Args {
+func mainTransferTest(_ *testing.T, sendType string) Args {
 	cleanTestDir()
 	defer cleanTestDir()
 	// Prepare Test
@@ -32,15 +34,14 @@ func mainTransferTest(_ *testing.T, zipped bool) Args {
 
 	fmt.Println("mocking server")
 
-	u, err := url.Parse("http://localhost:8080/")
+	u, err := url.Parse("https://193.196.54.71/test/projects/martin")
 	if err != nil {
 		ErrorLogger.Println(err)
 		log.Fatal(err)
 	}
 
 	fmt.Println("url: ", u.String())
-
-	args := Args{src: "./testDir/src", duration: 3, dst: *u, user: "admin", pass: "admin", zipped: zipped}
+	args := Args{src: "./testDir/src", duration: 3, dst: *u, user: "martin", pass: "martin", sendType: sendType}
 	fmt.Println(args)
 
 	fmt.Println("________________________________NONE_______________")
@@ -64,13 +65,18 @@ func mainTransferTest(_ *testing.T, zipped bool) Args {
 }
 
 func TestDoWorkTransfer(t *testing.T) {
+	config := &tls.Config{
+		InsecureSkipVerify: true,
+	}
+
+	tr = &http.Transport{TLSClientConfig: config}
 	fmt.Println("Make sure that docker container is receiving. Run: docker-compose up")
-	args := mainTransferTest(t, false)
+	args := mainTransferTest(t, "folder")
 	paths := []string{"/A/B/a.txt", "/A/C/c.txt", "/A/b.txt", "/e.txt"}
 	user := args.user
 	password := args.pass
 
-	c := gowebdav.NewClient(args.dst.String(), user, password)
+	c := gowebdav.NewClient(args.dst.String(), user, password, tr)
 	for _, p := range paths {
 		if _, err := c.Stat(p); err != nil {
 			fmt.Println(err)
@@ -84,13 +90,18 @@ func TestDoWorkTransfer(t *testing.T) {
 }
 
 func TestDoWorkTransferZipped(t *testing.T) {
+	config := &tls.Config{
+		InsecureSkipVerify: true,
+	}
+
+	tr = &http.Transport{TLSClientConfig: config}
 	fmt.Println("Make sure that docker container is receiving. Run: docker-compose up")
-	args := mainTransferTest(t, true)
+	args := mainTransferTest(t, "zip")
 	paths := []string{"/A.zip", "/e.txt"}
 	user := args.user
 	password := args.pass
 
-	c := gowebdav.NewClient(args.dst.String(), user, password)
+	c := gowebdav.NewClient(args.dst.String(), user, password, tr)
 	for _, p := range paths {
 		if _, err := c.Stat(p); err != nil {
 			fmt.Println(err)

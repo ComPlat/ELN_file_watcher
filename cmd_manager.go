@@ -11,14 +11,14 @@ type Args struct {
 	src, user, pass, crt string
 	dst                  url.URL
 	duration             time.Duration
-	zipped               bool
+	sendType             string
 }
 
 // GetCmdArgs Get/Parse command line arguments manager
 func GetCmdArgs() Args {
 	var fp, dst, user, pass, crt string
 	var duration int
-	var zipped bool
+	var sendType string
 
 	flag.StringVar(&fp, "src", "", "Source directory to be watched.")
 	flag.StringVar(&dst, "dst", "", "WebDAV destination URL. If the destination is on the lsdf, the URL should be as follows:\nhttps://os-webdav.lsdf.kit.edu/<OE>/<inst>/projects/<PROJECTNAME>/\n            <OE>-Organisationseinheit, z.B. kit.\n            <inst>-Institut-Name, z.B. ioc, scc, ikp, imk-asf etc.\n            <USERNAME>-User-Name z.B. xy1234, bs_abcd etc.\n            <PROJRCTNAME>-Projekt-Name")
@@ -28,10 +28,16 @@ func GetCmdArgs() Args {
 	flag.StringVar(&crt, "crt", "", "Path to server TLS certificate. Only needed if the server has a self signed certificate.")
 	/// Only considered if result are stored in a folder.
 	/// If zipped is set the result folder will be transferred as zip file
-	flag.BoolVar(&zipped, "zip", false, "Only considered if result are stored in a folder. If zipped is set the result folder will be transferred as zip file.")
+	flag.StringVar(&sendType, "type", "", "Type must be 'file', 'folder' or 'zip'. The 'file' option means that each file is handled individually, the 'folder' option means that entire folders are transmitted only when all files in them are ready. The option 'zip' sends a folder zipped, only when all files in a folder are ready.")
 	flag.Parse()
 
-	if dst == "" || fp == "" {
+	if sendType != "file" && sendType != "folder" && sendType != "zip" {
+		err := "'type' has to be 'file', 'folder', or 'zip'"
+		ErrorLogger.Println(err)
+		log.Fatal(err)
+	}
+
+	if dst == "" || fp == "" || sendType == "" {
 		err := "'dst' and 'src' must not be empty!"
 		ErrorLogger.Println(err)
 		log.Fatal(err)
@@ -43,6 +49,6 @@ func GetCmdArgs() Args {
 		log.Fatal(err)
 	}
 
-	return Args{src: fp, dst: *u, user: user, pass: pass, crt: crt, duration: time.Duration(duration) * time.Second, zipped: zipped}
+	return Args{src: fp, dst: *u, user: user, pass: pass, crt: crt, duration: time.Duration(duration) * time.Second, sendType: sendType}
 
 }
