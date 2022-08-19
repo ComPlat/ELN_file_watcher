@@ -8,22 +8,37 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"os/user"
 	"path"
 	"time"
 )
 
 var (
-	InfoLogger  *log.Logger
-	ErrorLogger *log.Logger
-	args        Args
-	tr          *http.Transport = nil
-	TempPath    string
+	InfoLogger        *log.Logger
+	ErrorLogger       *log.Logger
+	args              Args
+	tr                *http.Transport = nil
+	TempPath, LogPath string
 )
 
 // init initializes the logger and parses CMD args.
 func init() {
 
-	logFile, err := os.OpenFile("efw_log.txt", os.O_CREATE|os.O_APPEND|os.O_RDWR, 0666)
+	usr, err := user.Current()
+	if err != nil {
+		log.Fatal(err)
+	}
+	wd := usr.HomeDir
+
+	TempPath = path.Join(wd, "efw_exporter/efw_temp")
+	if err := os.MkdirAll(TempPath, os.ModePerm); err != nil {
+		ErrorLogger.Println(err)
+		panic("")
+	}
+
+	LogPath = path.Join(wd, "efw_exporter/efw_log.txt")
+
+	logFile, err := os.OpenFile(LogPath, os.O_CREATE|os.O_APPEND|os.O_RDWR, 0666)
 	if err != nil {
 		panic(err)
 	}
@@ -38,15 +53,6 @@ func init() {
 func initArgs() {
 	args = GetCmdArgs()
 	isCert := len(args.crt) > 0
-
-	executablePath, err := os.Executable()
-	if err != nil {
-		ErrorLogger.Println(err)
-		panic("")
-	}
-
-	TempPath = path.Join(path.Dir(executablePath), ".temp")
-	_ = os.MkdirAll(TempPath, os.ModePerm)
 
 	// Get the SystemCertPool, continue with an empty pool on error
 	rootCAs, _ := x509.SystemCertPool()
@@ -89,7 +95,7 @@ func main() {
 	done_files := make(chan string, 20)
 	// For potential (not jet implemented quit conditions)
 	quit := make(chan int)
-	InfoLogger.Printf("\n-----------------------------\nCMD Args:\n dst=%s,\n src=%s,\n duration=%d sec.,\n user=%s,\n type=%s,\n crt= %s \n-----------------------------\n", args.dst.String(), args.src, int(args.duration.Seconds()), args.user, args.sendType, args.crt)
+	InfoLogger.Printf("\n-----------------------------\nLogfile: %s\n-----------------------------\nCMD Args:\n dst=%s,\n src=%s,\n duration=%d sec.,\n user=%s,\n type=%s,\n crt= %s \n-----------------------------\n", LogPath, args.dst.String(), args.src, int(args.duration.Seconds()), args.user, args.sendType, args.crt)
 	pm := newProcessManager(&args, done_files)
 	go pm.doWork(quit)
 
