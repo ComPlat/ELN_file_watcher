@@ -8,6 +8,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"path"
 	"time"
 )
 
@@ -16,6 +17,7 @@ var (
 	ErrorLogger *log.Logger
 	args        Args
 	tr          *http.Transport = nil
+	TempPath    string
 )
 
 // init initializes the logger and parses CMD args.
@@ -27,8 +29,8 @@ func init() {
 	}
 	mw := io.MultiWriter(os.Stdout, logFile)
 
-	InfoLogger = log.New(mw, "\rINFO: ", log.Ldate|log.Ltime|log.Lshortfile)
-	ErrorLogger = log.New(mw, "\rERROR: ", log.Ldate|log.Ltime|log.Lshortfile)
+	InfoLogger = log.New(mw, "-> INFO: ", log.Ldate|log.Ltime)
+	ErrorLogger = log.New(mw, "ERROR: ", log.Ldate|log.Ltime|log.Lshortfile)
 
 	// Read in the cert file
 }
@@ -36,6 +38,16 @@ func init() {
 func initArgs() {
 	args = GetCmdArgs()
 	isCert := len(args.crt) > 0
+
+	executablePath, err := os.Executable()
+	if err != nil {
+		ErrorLogger.Println(err)
+		panic("")
+	}
+
+	TempPath = path.Join(path.Dir(executablePath), ".temp")
+	_ = os.MkdirAll(TempPath, os.ModePerm)
+
 	// Get the SystemCertPool, continue with an empty pool on error
 	rootCAs, _ := x509.SystemCertPool()
 	if rootCAs == nil {
@@ -80,7 +92,11 @@ func main() {
 	InfoLogger.Printf("\n-----------------------------\nCMD Args:\n dst=%s,\n src=%s,\n duration=%d sec.,\n user=%s,\n type=%s,\n crt= %s \n-----------------------------\n", args.dst.String(), args.src, int(args.duration.Seconds()), args.user, args.sendType, args.crt)
 	pm := newProcessManager(&args, done_files)
 	go pm.doWork(quit)
-	tm := newTransferManager(&args, done_files)
+
+	prm := newPrepareManager(&args, done_files)
+	go prm.doWork(quit)
+
+	tm := newTransferManager(&args)
 	if _, err := tm.connect_to_server(); err != nil {
 		ErrorLogger.Println("Error connecting: ", err)
 		log.Fatal(err)

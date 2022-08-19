@@ -2,6 +2,7 @@ package main
 
 import (
 	"archive/zip"
+	"io"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -19,6 +20,54 @@ func getRootDir(path string) string {
 		}
 		current = path
 	}
+}
+
+func CopyDirectory(scrDir string) error {
+	return filepath.Walk(scrDir, func(sourcePath string, fileInfo os.FileInfo, e error) error {
+		destPath, err := filepath.Rel(filepath.Dir(scrDir), sourcePath)
+		if err != nil {
+			return err
+		}
+		destPath = filepath.Join(TempPath, destPath)
+		if fileInfo.IsDir() {
+			_ = os.MkdirAll(destPath, 0755)
+		} else {
+			if err := Copy(sourcePath, destPath); err != nil {
+				return err
+			}
+		}
+		return nil
+	})
+}
+
+func Copy(srcFile, dstFile string) error {
+	out, err := os.Create(dstFile)
+	if err != nil {
+		return err
+	}
+
+	defer func(out *os.File) {
+		if err := out.Close(); err != nil {
+			ErrorLogger.Println(err)
+		}
+	}(out)
+
+	in, err := os.Open(srcFile)
+	defer func(in *os.File) {
+		if err := in.Close(); err != nil {
+			ErrorLogger.Println(err)
+		}
+	}(in)
+	if err != nil {
+		return err
+	}
+
+	_, err = io.Copy(out, in)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 // zipFolder zips a folder and safes the zipped folder with the same name in the same directory.

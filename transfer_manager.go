@@ -13,8 +13,7 @@ import (
 // If folder of file is ready to send it sends it via WebDAV (HTTP) to <CMD arg -dst>.
 // It also initializes the zipping if <CMD arg -zip> is set.
 type TransferManager struct {
-	args       *Args
-	done_files chan string
+	args *Args
 }
 
 // doWork runs in a endless loop. It reacts on the channel done_files.
@@ -22,52 +21,50 @@ type TransferManager struct {
 // It also initializes the zipping if <CMD arg -zip> is set
 // It terminates as soon as a value is pushed into quit. Run in extra goroutine.
 func (m *TransferManager) doWork(quit chan int) {
-	InfoLogger.Println("Started transfer process.")
-
 	for {
-
 		select {
 		case <-quit:
-			InfoLogger.Println("Quit transfer process.")
 			return
-		case to_send := <-m.done_files:
-			if file, err := os.Stat(to_send); err != nil {
-				ErrorLogger.Println(err)
-			} else if !file.IsDir() {
-				if err := m.send_file(to_send, file); err != nil {
-					ErrorLogger.Println(err)
-				}
-			} else if m.args.sendType == "zip" {
-				zip_paht, err := zipFolder(to_send)
-				if err != nil {
-					ErrorLogger.Println(err)
-				}
-				if file, err := os.Stat(zip_paht); err != nil {
-					ErrorLogger.Println(err)
+		default:
+			items, _ := ioutil.ReadDir(TempPath)
+			for _, file := range items {
+				var gErr error = nil
+				to_send := filepath.Join(TempPath, file.Name())
+
+				if !file.IsDir() {
+					gErr = m.send_file(to_send, file)
+				} else if m.args.sendType == "zip" {
+					zip_paht, err := zipFolder(to_send)
+					gErr = err
+					if err == nil {
+						if file, err := os.Stat(zip_paht); err != nil {
+							gErr = err
+						} else {
+							gErr = m.send_file(zip_paht, file)
+						}
+					}
+
 				} else {
-					if err = m.send_file(zip_paht, file); err != nil {
-						ErrorLogger.Println(err)
-					}
-					if err := os.Remove(zip_paht); err != nil {
-						ErrorLogger.Println(err)
-					}
+					gErr = filepath.Walk(to_send, func(path string, info os.FileInfo, err error) error {
+						if err == nil && !info.IsDir() {
+							err = m.send_file(path, info)
+						}
+
+						return err
+
+					})
 				}
 
-			} else {
-				err := filepath.Walk(to_send, func(path string, info os.FileInfo, err error) error {
-					if err == nil && !info.IsDir() {
-						err = m.send_file(path, info)
+				if gErr == nil {
+					err := os.RemoveAll(to_send)
+					if err != nil {
+						ErrorLogger.Println(err)
 					}
-
-					return err
-
-				})
-
-				if err != nil {
-					ErrorLogger.Println(err)
+				} else {
+					ErrorLogger.Println(gErr)
 				}
+				time.Sleep(m.args.duration / 2)
 			}
-
 		}
 	}
 }
@@ -96,7 +93,7 @@ func (m *TransferManager) send_file(path_to_file string, file os.FileInfo) error
 	if m.args.sendType == "file" {
 		urlPathDir = "."
 		webdavFilePath = file.Name()
-	} else if relpath, err := filepath.Rel(m.args.src, path_to_file); err == nil {
+	} else if relpath, err := filepath.Rel(TempPath, path_to_file); err == nil {
 		webdavFilePath = strings.Replace(relpath, string(os.PathSeparator), "/", -1)
 		webdavFilePath = strings.TrimPrefix(webdavFilePath, "./")
 		urlPathDir = filepath.Dir(webdavFilePath)
@@ -111,6 +108,7 @@ func (m *TransferManager) send_file(path_to_file string, file os.FileInfo) error
 			return err
 		}
 	}
+
 	bytes, err := ioutil.ReadFile(path_to_file)
 	if err != nil {
 		return err
@@ -122,6 +120,7 @@ func (m *TransferManager) send_file(path_to_file string, file os.FileInfo) error
 	}
 	return nil
 }
-func newTransferManager(args *Args, done_files chan string) TransferManager {
-	return TransferManager{args: args, done_files: done_files}
+
+func newTransferManager(args *Args) TransferManager {
+	return TransferManager{args: args}
 }
