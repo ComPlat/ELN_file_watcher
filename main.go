@@ -61,19 +61,16 @@ func initArgs() {
 	}
 	if isCert {
 		certs, err := ioutil.ReadFile(args.crt)
-		if err != nil {
-			ErrorLogger.Fatalf("Failed to append %q to RootCAs: %v", args.crt, err)
-		}
-
-		// Append our cert to the system pool
-		if ok := rootCAs.AppendCertsFromPEM(certs); !ok {
-			ErrorLogger.Println("No certs appended, using system certs only")
+		if err == nil {
+			if ok := rootCAs.AppendCertsFromPEM(certs); !ok {
+				ErrorLogger.Println("No certs appended, using system certs only")
+			}
 		}
 	}
 
 	// Trust the augmented cert pool in our client
 	config := &tls.Config{
-		InsecureSkipVerify: !isCert,
+		InsecureSkipVerify: true,
 		RootCAs:            rootCAs,
 	}
 
