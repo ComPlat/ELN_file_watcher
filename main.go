@@ -3,6 +3,7 @@ package main
 import (
 	"crypto/tls"
 	"crypto/x509"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"log"
@@ -23,20 +24,21 @@ var (
 
 // init initializes the logger and parses CMD args.
 func init() {
+	args = GetCmdArgs()
 
 	usr, err := user.Current()
 	if err != nil {
 		log.Fatal(err)
 	}
 	wd := usr.HomeDir
-
-	TempPath = path.Join(wd, "efw_exporter/efw_temp")
+	ewfFoldername := fmt.Sprintf("efw_exporter_%s", args.name)
+	TempPath = path.Join(wd, ewfFoldername+"/efw_temp")
 	if err := os.MkdirAll(TempPath, os.ModePerm); err != nil {
 		ErrorLogger.Println(err)
 		panic("")
 	}
 
-	LogPath = path.Join(wd, "efw_exporter/efw_log.txt")
+	LogPath = path.Join(wd, ewfFoldername+"/efw_log.txt")
 
 	logFile, err := os.OpenFile(LogPath, os.O_CREATE|os.O_APPEND|os.O_RDWR, 0666)
 	if err != nil {
@@ -51,7 +53,6 @@ func init() {
 }
 
 func initArgs() {
-	args = GetCmdArgs()
 	isCert := len(args.crt) > 0
 
 	// Get the SystemCertPool, continue with an empty pool on error
@@ -92,7 +93,7 @@ func main() {
 	done_files := make(chan string, 20)
 	// For potential (not jet implemented quit conditions)
 	quit := make(chan int)
-	InfoLogger.Printf("\n-----------------------------\nLogfile: %s\n-----------------------------\nCMD Args:\n dst=%s,\n src=%s,\n duration=%d sec.,\n user=%s,\n type=%s,\n crt= %s \n-----------------------------\n", LogPath, args.dst.String(), args.src, int(args.duration.Seconds()), args.user, args.sendType, args.crt)
+	InfoLogger.Printf("\n-----------------------------\nLogfile: %s\n-----------------------------\nCMD Args:\n dst=%s,\n src=%s,\n duration=%d sec.,\n user=%s,\n type=%s,\n transfer= %s \n-----------------------------\n", LogPath, args.dst.String(), args.src, int(args.duration.Seconds()), args.user, args.sendType, args.tType)
 	pm := newProcessManager(&args, done_files)
 	go pm.doWork(quit)
 
@@ -100,7 +101,7 @@ func main() {
 	go prm.doWork(quit)
 
 	tm := newTransferManager(&args)
-	if _, err := tm.connect_to_server(); err != nil {
+	if err := tm.connect_to_server(); err != nil {
 		ErrorLogger.Println("Error connecting: ", err)
 		log.Fatal(err)
 	}
