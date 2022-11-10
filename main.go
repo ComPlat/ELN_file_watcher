@@ -93,7 +93,7 @@ func main() {
 	done_files := make(chan string, 20)
 	// For potential (not jet implemented quit conditions)
 	quit := make(chan int)
-	InfoLogger.Printf("\n-----------------------------\nLogfile: %s\n-----------------------------\nCMD Args:\n dst=%s,\n src=%s,\n duration=%d sec.,\n user=%s,\n type=%s,\n transfer= %s \n-----------------------------\n", LogPath, args.dst.String(), args.src, int(args.duration.Seconds()), args.user, args.sendType, args.tType)
+	InfoLogger.Printf("\n-----------------------------\nLogfile: %s\n-----------------------------\nCMD Args:\n name=%s,\n dst=%s,\n src=%s,\n duration=%d sec.,\n user=%s,\n type=%s,\n transfer=%s\n-----------------------------\n", LogPath, args.name, args.dst.String(), args.src, int(args.duration.Seconds()), args.user, args.sendType, args.tType)
 	pm := newProcessManager(&args, done_files)
 	go pm.doWork(quit)
 
