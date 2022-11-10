@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/url"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -56,8 +57,11 @@ func GetCmdArgs() Args {
 	}
 
 	u, err := url.Parse(dst)
-	if err != nil && tType == "sftp" {
+	if (err != nil || u.Scheme == "") && tType == "sftp" {
 		u, err = url.Parse("ssh://" + dst)
+		if !strings.Contains(u.Host, ":") {
+			u.Host += ":22"
+		}
 	}
 
 	if err != nil {

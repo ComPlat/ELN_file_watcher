@@ -1,2 +1,0 @@
-cd "<Path to efw.exe>"
-efw.exe -name <name_of_the_efw_system> -transfer <sftp|webdav> -duration <time_in_sec> -src "<path_to_folder>" -dst "https://os-webdav.lsdf.kit.edu/<OE>/<inst>/projects/<PROJECTNAME>/" -user "<username>" -pass "<password>" -tpye "file|folder|zip" [-crt "<path_to_server_crt>"]
