@@ -30,7 +30,7 @@ func (m *TransferManagerWebdav) connect_to_server() error {
 	password := m.args.pass
 
 	c := gowebdav.NewClient(m.args.dst.String(), user, password, tr)
-	c.SetTimeout(5 * time.Second)
+	c.SetTimeout(10 * time.Second)
 	if err := c.Connect(); err != nil {
 		return err
 	}
@@ -69,7 +69,11 @@ func (m *TransferManagerWebdav) send_file(path_to_file string, file os.FileInfo)
 	if err != nil {
 		return err
 	}
-
+	defer func() {
+		if r := recover(); r != nil {
+			ErrorLogger.Printf("WebDav Panic: %+v\n", r)
+		}
+	}()
 	err = m.client.Write(webdavFilePath, bytes, 0644)
 	if err != nil {
 		return err
