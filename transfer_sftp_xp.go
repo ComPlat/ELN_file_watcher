@@ -66,7 +66,7 @@ func (m *TransferManagerSftp) connect_to_server() error {
 }
 
 // send_file sends a file via WebDAV
-func (m *TransferManagerSftp) send_file(path_to_file string, file os.FileInfo) error {
+func (m *TransferManagerSftp) send_file(path_to_file string, file os.FileInfo) (bool, error) {
 	var webdavFilePath, urlPathDir string
 
 	if m.args.sendType == "file" {
@@ -75,7 +75,7 @@ func (m *TransferManagerSftp) send_file(path_to_file string, file os.FileInfo) e
 		webdavFilePath = strings.Replace(relpath, string(os.PathSeparator), "/", -1)
 		webdavFilePath = strings.TrimPrefix(webdavFilePath, "./")
 	} else {
-		return err
+		return false, err
 	}
 	webdavFilePath = filepath.Join(m.args.dst.Path, webdavFilePath)
 	urlPathDir = filepath.Dir(webdavFilePath)
@@ -85,7 +85,7 @@ func (m *TransferManagerSftp) send_file(path_to_file string, file os.FileInfo) e
 	if relpath, err := filepath.Rel(m.args.dst.Path, urlPathDir); err == nil {
 		urlPathDir = strings.Replace(relpath, string(os.PathSeparator), "/", -1)
 	} else {
-		return err
+		return false, err
 	}
 
 	cwp := m.args.dst.Path
@@ -95,7 +95,9 @@ func (m *TransferManagerSftp) send_file(path_to_file string, file os.FileInfo) e
 		_ = winscp("/command \"open "+sftpConnStr+"\"", fmt.Sprintf("\"mkdir \"\"%s\"\"\"", cwp), "\"exit\"")
 	}
 
-	return winscp("/command", "\"open "+sftpConnStr+"\"",
+	err := winscp("/command", "\"open "+sftpConnStr+"\"",
 		fmt.Sprintf("\"put \"\"%s\"\" \"\"%s\"\"\"", path_to_file, webdavFilePath),
 		"\"exit\"")
+
+	return err == nil, err
 }

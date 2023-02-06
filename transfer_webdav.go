@@ -1,6 +1,8 @@
 package main
 
 import (
+	"errors"
+	"fmt"
 	"github.com/StarmanMartin/gowebdav"
 	"io/ioutil"
 	"os"
@@ -39,12 +41,12 @@ func (m *TransferManagerWebdav) connect_to_server() error {
 }
 
 // send_file sends a file via WebDAV
-func (m *TransferManagerWebdav) send_file(path_to_file string, file os.FileInfo) error {
+func (m *TransferManagerWebdav) send_file(path_to_file string, file os.FileInfo) (bool, error) {
 	var webdavFilePath, urlPathDir string
 
 	err := m.connect_to_server()
 	if err != nil {
-		return err
+		return false, err
 	}
 	if m.args.sendType == "file" {
 		urlPathDir = "."
@@ -54,29 +56,30 @@ func (m *TransferManagerWebdav) send_file(path_to_file string, file os.FileInfo)
 		webdavFilePath = strings.TrimPrefix(webdavFilePath, "./")
 		urlPathDir = filepath.Dir(webdavFilePath)
 	} else {
-		return err
+		return false, err
 	}
 	InfoLogger.Println("Sending...", webdavFilePath)
 
 	if urlPathDir != "." {
 		err := m.client.MkdirAll(urlPathDir, 0644)
 		if err != nil {
-			return err
+			return false, err
 		}
 	}
 
 	bytes, err := ioutil.ReadFile(path_to_file)
 	if err != nil {
-		return err
+		return false, err
 	}
+
 	defer func() {
 		if r := recover(); r != nil {
-			ErrorLogger.Printf("WebDav Panic: %+v\n", r)
+
+			err = errors.New(fmt.Sprintf("%+v", r))
+			ErrorLogger.Printf("WebDav Panic: %s\n", err)
 		}
 	}()
 	err = m.client.Write(webdavFilePath, bytes, 0644)
-	if err != nil {
-		return err
-	}
-	return nil
+
+	return true, err
 }

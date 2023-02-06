@@ -20,7 +20,7 @@ type TransferManager interface {
 	connect_to_server() error
 
 	// send_file sends a file via WebDAV
-	send_file(path_to_file string, file os.FileInfo) error
+	send_file(path_to_file string, file os.FileInfo) (bool, error)
 }
 
 func doWorkImplementation(quit chan int, m TransferManager, args *Args) {
@@ -32,10 +32,11 @@ func doWorkImplementation(quit chan int, m TransferManager, args *Args) {
 			items, _ := ioutil.ReadDir(TempPath)
 			for _, file := range items {
 				var gErr error = nil
+				var ok bool
 				to_send := filepath.Join(TempPath, file.Name())
 
 				if !file.IsDir() {
-					gErr = m.send_file(to_send, file)
+					ok, gErr = m.send_file(to_send, file)
 				} else if args.sendType == "zip" {
 					zip_paht, err := zipFolder(to_send)
 					gErr = err
@@ -43,7 +44,7 @@ func doWorkImplementation(quit chan int, m TransferManager, args *Args) {
 						if file, err := os.Stat(zip_paht); err != nil {
 							gErr = err
 						} else {
-							gErr = m.send_file(zip_paht, file)
+							ok, gErr = m.send_file(zip_paht, file)
 						}
 					}
 
@@ -55,8 +56,8 @@ func doWorkImplementation(quit chan int, m TransferManager, args *Args) {
 						gErr = filepath.Walk(to_send, func(path_to_send string, info os.FileInfo, err error) error {
 							if err == nil && !info.IsDir() {
 								hasChanged = true
-								err = m.send_file(path_to_send, info)
-								if err == nil {
+								ok, err = m.send_file(path_to_send, info)
+								if ok {
 									err = os.Remove(path_to_send)
 								}
 							}
@@ -67,12 +68,12 @@ func doWorkImplementation(quit chan int, m TransferManager, args *Args) {
 					}
 				}
 
-				if gErr == nil {
+				if ok {
 					err := os.RemoveAll(to_send)
 					if err != nil {
 						ErrorLogger.Println(err)
 					}
-				} else {
+				} else if gErr != nil {
 					ErrorLogger.Println(gErr)
 				}
 				time.Sleep(args.duration / 2)

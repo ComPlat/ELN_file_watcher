@@ -68,12 +68,12 @@ func (m *TransferManagerSftp) connect_to_server() error {
 }
 
 // send_file sends a file via WebDAV
-func (m *TransferManagerSftp) send_file(path_to_file string, file os.FileInfo) error {
+func (m *TransferManagerSftp) send_file(path_to_file string, file os.FileInfo) (bool, error) {
 	var webdavFilePath, urlPathDir string
 
 	err := m.connect_to_server()
 	if err != nil {
-		return err
+		return false, err
 	}
 	if m.args.sendType == "file" {
 		webdavFilePath = file.Name()
@@ -81,7 +81,7 @@ func (m *TransferManagerSftp) send_file(path_to_file string, file os.FileInfo) e
 		webdavFilePath = strings.Replace(relpath, string(os.PathSeparator), "/", -1)
 		webdavFilePath = strings.TrimPrefix(webdavFilePath, "./")
 	} else {
-		return err
+		return false, err
 	}
 	webdavFilePath = filepath.Join(m.args.dst.Path, webdavFilePath)
 	urlPathDir = filepath.Dir(webdavFilePath)
@@ -92,26 +92,26 @@ func (m *TransferManagerSftp) send_file(path_to_file string, file os.FileInfo) e
 	if urlPathDir != "." {
 		err := m.client.MkdirAll(urlPathDir)
 		if err != nil {
-			return err
+			return false, err
 		}
 	}
 
 	srcFile, err := os.Open(path_to_file)
 	if err != nil {
-		return err
+		return false, err
 	}
 	defer srcFile.Close()
 
 	dstFile, err := m.client.OpenFile(webdavFilePath, (os.O_WRONLY | os.O_CREATE | os.O_TRUNC))
 	if err != nil {
-		return err
+		return false, err
 	}
 	defer dstFile.Close()
 
 	_, err = io.Copy(dstFile, srcFile)
 	if err != nil {
-		return err
+		return false, err
 	}
 
-	return nil
+	return true, nil
 }
