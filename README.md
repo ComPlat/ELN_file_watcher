@@ -1,14 +1,15 @@
 # ELN_file_watcher
 *Version 1.2*
 
-Once all files in a subdirectory <CMD arg -src> 
+Once all files in a subdirectory <CMD arg -src>
 (or a file directly in <CMD arg -src>) have not been
 modified for about exactly <CMD arg -duration> seconds,
 the subdirectory is sent to a remote WebDAV or SFTP server at <CMD arg -dst>.
 
-**Important** 
+**Important**
 1) If you want to run this tool on Windows XP it has to be compiled with go version 1.10.8.
-2) If the tool is used with the SFTP protocol under Windows XP, you must also save a portable version of If the tool is used with the SFTP protocol under Windows XP, you must also save a protable version of WinSCP (WinSCP)[https://winscp.net/download/WinSCP-5.21.5-Portable.zip] in the same folder as the efw.exe. in the same folder as the efw.exe.
+2) If the tool is used with the SFTP protocol under Windows XP, you must also save a protable
+   version of WinSCP (WinSCP)[https://winscp.net/download/WinSCP-5.21.5-Portable.zip] in the same folder as the efw.exe.
 
 ## Usage
 
@@ -47,7 +48,7 @@ efw -duration &lt;integer&gt; -src &lt;folder&gt; -dst &lt;url&gt;/ -user &lt;us
          Path to server TLS certificate. Only needed if the server has a self signed certificate.
 
 ## Setup the efw on a Windows system
-1) Download the **efw_run_example.bat**, the **efw.exe** and the **task_example.vbs** for your system [here](https://github.com/ComPlat/ELN_file_watcher/releases/tag/latest)
+2) Download the **efw_run_example.bat**, the **efw.exe** and the **task_example.vbs** for your system [here](https://github.com/ComPlat/ELN_file_watcher/releases/tag/latest)
 2) Copy the **efw_{system}.exe** and save it **as efw.exe**. Additionally, download the **efw_run_example.bat** to the target directory on your target machine
    - In the following we use the example "C:\Program Files\file_exporter".
 3) Replace in the **task_example.vbs**:
