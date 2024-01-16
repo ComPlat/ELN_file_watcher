@@ -57,8 +57,10 @@ func GetCmdArgs() Args {
 	}
 
 	u, err := url.Parse(dst)
-	if (err != nil || u.Scheme == "") && tType == "sftp" {
-		u, err = url.Parse("ssh://" + dst)
+	if tType == "sftp" {
+		if err != nil || u.Scheme == "" {
+			u, err = url.Parse("ssh://" + dst)
+		}
 		if !strings.Contains(u.Host, ":") {
 			u.Host += ":22"
 		}
